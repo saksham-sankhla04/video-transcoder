@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   UploadedFile,
@@ -10,7 +11,7 @@ import { diskStorage } from 'multer';
 
 @Controller('upload')
 export class videoController {
-  constructor(private uploadServic: vidoUploadService) {}
+  constructor(private readonly uploadService: vidoUploadService) {}
 
   @Post()
   @UseInterceptors(
@@ -27,9 +28,23 @@ export class videoController {
           cb(null, filename);
         },
       }),
+      fileFilter: (_, file, cb) => {
+        if (!file.mimetype.startsWith('video/')) {
+          return cb(
+            new BadRequestException('Only Video files are allowed'),
+            false,
+          );
+        }
+
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 500 * 1024 * 1024, // 500 MB
+      },
     }),
   )
   async upload(@UploadedFile() video: Express.Multer.File) {
-    return this.uploadServic.uploadVideo(video);
+    if (!video) throw new BadRequestException('Video file is required');
+    return this.uploadService.uploadVideo(video);
   }
 }
