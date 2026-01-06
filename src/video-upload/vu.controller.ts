@@ -43,7 +43,7 @@ export class videoController {
       },
     }),
   )
-  async upload(@UploadedFile() video: Express.Multer.File) {
+  upload(@UploadedFile() video: Express.Multer.File) {
     if (!video) throw new BadRequestException('Video file is required');
     return this.uploadService.uploadVideo(video);
   }

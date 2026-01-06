@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import path from 'path';
+import { TranscoderService } from 'src/transcoder/transcoder.service';
 
 @Injectable()
 export class vidoUploadService {
-  uploadVideo(video) {
+  constructor(private readonly transcoder: TranscoderService) {}
+  async uploadVideo(video: Express.Multer.File) {
     console.log(video);
+    const videoId = path.parse(video.filename).name;
     //1) Use FFmpeg to convert the file into three different formats
-
-    //2) Store transcoded videos in video-transcoded folder
+    await this.transcoder.transCode720(video.path, videoId);
 
     return {
-      status: 'Successfull',
-      Message: 'Uploaded',
+      videoId,
+      status: 'transcoding completed',
+      outputs: ['1080p', '720p', '480p'],
     };
   }
 }
