@@ -1,3 +1,41 @@
+# Video Transcoder Service
+
+A backend service built with NestJS that accepts video uploads and transcodes them into multiple resolutions using FFmpeg.
+
+## Features
+
+- Video upload via REST API
+- Transcoding into 1080p, 720p, and 480p
+- Aspect-ratio-preserving scaling
+- Local filesystem storage
+- Modular NestJS architecture
+
+## Tech Stack
+
+- NestJS
+- Node.js
+- FFmpeg
+- Multer
+- pnpm
+
+## API
+
+POST /upload  
+Content-Type: multipart/form-data  
+Field: video
+
+## File Storage
+
+Uploaded and transcoded files are stored locally during development.
+These directories are excluded from version control.
+
+## Future Improvements
+
+- Background job processing
+- HLS adaptive streaming
+- Cloud storage (S3)
+- Progress tracking
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>

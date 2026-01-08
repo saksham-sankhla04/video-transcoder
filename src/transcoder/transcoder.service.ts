@@ -11,7 +11,7 @@ const RESOLUTIONS = [
 
 @Injectable()
 export class TranscoderService {
-  async transCode720(inputPath: string, videoId: string) {
+  async transCodeAll(inputPath: string, videoId: string) {
     const outputDir = path.join('outputs', videoId);
     fs.mkdirSync(outputDir, { recursive: true });
 
