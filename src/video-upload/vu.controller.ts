@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   Controller,
+  Get,
+  Param,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -8,10 +10,19 @@ import {
 import { vidoUploadService } from './vu.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { VideoStatusService } from 'src/transcoder/video-status.service';
 
 @Controller('upload')
 export class videoController {
-  constructor(private readonly uploadService: vidoUploadService) {}
+  constructor(
+    private readonly uploadService: vidoUploadService,
+    private readonly videoStatus: VideoStatusService,
+  ) {}
+
+  @Get('videos/:id/status')
+  getStatus(@Param('id') id: string) {
+    return this.videoStatus.get(id);
+  }
 
   @Post()
   @UseInterceptors(

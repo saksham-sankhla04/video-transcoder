@@ -6,6 +6,7 @@ import { TranscoderService } from './transcoder/transcoder.service';
 import { TranscoderModule } from './transcoder/transcoder.module';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue.module';
+import { VideoStatusService } from './transcoder/video-status.service';
 
 @Module({
   imports: [

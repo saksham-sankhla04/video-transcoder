@@ -1,14 +1,15 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { TranscoderService } from 'src/transcoder/transcoder.service';
 import { TranscodeProcessor } from './transcode.processor';
+import { TranscoderModule } from 'src/transcoder/transcoder.module';
 
 @Module({
   imports: [
     BullModule.registerQueue({
       name: 'video-transcode',
     }),
+    TranscoderModule,
   ],
-  providers: [TranscoderService, TranscodeProcessor],
+  providers: [TranscodeProcessor],
 })
 export class QueueModule {}
