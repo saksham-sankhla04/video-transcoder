@@ -15,6 +15,10 @@ export class TranscoderService {
     const outputDir = path.join('outputs', videoId);
     fs.mkdirSync(outputDir, { recursive: true });
 
+    const thumbnailPath = path.join(outputDir, `thumbnail.jpg`);
+
+    await generateThumnail(inputPath, thumbnailPath);
+
     for (const res of RESOLUTIONS) {
       const outputPath = path.join(outputDir, `${res.label}.mp4`);
 
@@ -41,3 +45,18 @@ export class TranscoderService {
     };
   }
 }
+
+export const generateThumnail = async function (
+  inputPath: string,
+  thumbnailPath: string,
+) {
+  await runFFmpeg([
+    '-i',
+    inputPath,
+    '-ss',
+    '00:00:01',
+    '-vframes',
+    '1',
+    thumbnailPath,
+  ]);
+};

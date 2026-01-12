@@ -15,12 +15,32 @@ export class TranscodeProcessor extends WorkerHost {
   async process(job: Job) {
     const { inputPath, videoId } = job.data;
 
-    this.videoStatus.set(videoId, { status: 'processing' });
-    console.log(`Processing job ${job.id} for video ${videoId}`);
+    try {
+      //Setting The State to processing
+      this.videoStatus.set(videoId, { status: 'processing' });
+      console.log('Video is processing');
 
-    await this.transcoder.transCodeAll(inputPath, videoId);
+      //Transcoding All Videos
+      await this.transcoder.transCodeAll(inputPath, videoId);
 
-    this.videoStatus.set(videoId, { status: 'completed' });
-    console.log(`Completed job ${job.id}`);
+      //Setting the state to completed
+      console.log('Videos Are transcoded');
+      this.videoStatus.set(videoId, {
+        status: 'completed',
+        outputs: {
+          thumbnail: `/outputs/${videoId}/thumbnail.jpg`,
+          '480p': `/outputs/${videoId}/480p.mp4`,
+          '720p': `/outputs/${videoId}/720p.mp4`,
+          '1080p': `/outputs/${videoId}/1080p.mp4`,
+        },
+      });
+    } catch (err) {
+      this.videoStatus.set(videoId, {
+        status: 'failed',
+        error: err.message,
+      });
+
+      throw err;
+    }
   }
 }

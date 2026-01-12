@@ -17,10 +17,20 @@ export class vidoUploadService {
     //1) Use FFmpeg to convert the file into three different formats
     this.videoStatus.set(videoId, { status: 'queued' });
 
-    await this.queue.add('transcode', {
-      inputPath: video.path,
-      videoId,
-    });
+    await this.queue.add(
+      'transcode',
+      {
+        inputPath: video.path,
+        videoId,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 3000,
+        },
+      },
+    );
 
     return {
       videoId,
