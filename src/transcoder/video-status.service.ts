@@ -8,6 +8,7 @@ export class VideoStatusService {
     string,
     {
       status: VideoJobStatus;
+      progress?: number;
       outputs?: Record<string, string>;
       error?: string;
     }
@@ -17,6 +18,7 @@ export class VideoStatusService {
     videoId: string,
     data: {
       status: VideoJobStatus;
+      progress?: number;
       outputs?: Record<string, string>;
       error?: string;
     },
