@@ -7,7 +7,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { vidoUploadService } from './vu.service';
+import { VideoUploadService } from './vu.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { VideoStatusService } from 'src/transcoder/video-status.service';
@@ -15,7 +15,7 @@ import { VideoStatusService } from 'src/transcoder/video-status.service';
 @Controller('upload')
 export class videoController {
   constructor(
-    private readonly uploadService: vidoUploadService,
+    private readonly uploadService: VideoUploadService,
     private readonly videoStatus: VideoStatusService,
   ) {}
 

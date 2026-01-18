@@ -1,0 +1,18 @@
+FROM node:20-slim
+
+# Install FFmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy only dependency files first (better caching)
+COPY package.json pnpm-lock.yaml ./
+
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+# Now copy source 
+COPY . .
+
+CMD ["pnpm", "run", "start:worker"]

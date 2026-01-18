@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { videoController } from './vu.controller';
-import { vidoUploadService } from './vu.service';
+import { VideoUploadService } from './vu.service';
 import { BullModule } from '@nestjs/bullmq';
 import { TranscoderModule } from 'src/transcoder/transcoder.module';
 
@@ -12,6 +12,6 @@ import { TranscoderModule } from 'src/transcoder/transcoder.module';
     TranscoderModule,
   ],
   controllers: [videoController],
-  providers: [vidoUploadService],
+  providers: [VideoUploadService],
 })
 export class videoUploadModule {}

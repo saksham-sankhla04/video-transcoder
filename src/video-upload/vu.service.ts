@@ -5,7 +5,7 @@ import path from 'path';
 import { VideoStatusService } from 'src/transcoder/video-status.service';
 
 @Injectable()
-export class vidoUploadService {
+export class VideoUploadService {
   constructor(
     @InjectQueue('video-transcode') private readonly queue: Queue,
     private readonly videoStatus: VideoStatusService,
