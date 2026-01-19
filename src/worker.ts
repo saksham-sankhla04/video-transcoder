@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { WorkerModule } from './worker.module';
 
 async function bootstrap() {
-  await NestFactory.createApplicationContext(AppModule);
-  console.log('Worker started and listening for jobs');
+  await NestFactory.createApplicationContext(WorkerModule);
+  console.log('🎬 Worker started and listening for jobs');
 }
 
 bootstrap();

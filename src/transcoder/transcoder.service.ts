@@ -58,8 +58,6 @@ export class TranscoderService {
           outputPath,
         ],
         (currentTime) => {
-          console.log('progress tick', currentTime);
-
           const localProgress: number = Math.min(
             (currentTime / duration) * 100,
             100,

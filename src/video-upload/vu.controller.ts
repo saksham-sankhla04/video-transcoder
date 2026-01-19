@@ -11,6 +11,7 @@ import { VideoUploadService } from './vu.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { VideoStatusService } from 'src/transcoder/video-status.service';
+import { existsSync, mkdirSync } from 'fs';
 
 @Controller('upload')
 export class videoController {
@@ -28,7 +29,15 @@ export class videoController {
   @UseInterceptors(
     FileInterceptor('video', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: (req, file, cb) => {
+          const uploadPath = './uploads';
+          if (!existsSync(uploadPath)) {
+            // This creates the folder inside the container
+            // which syncs to your host via the -v volume
+            mkdirSync(uploadPath, { recursive: true });
+          }
+          cb(null, uploadPath);
+        },
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now();
           const nameTab = file.originalname.split('.');
