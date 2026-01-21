@@ -22,7 +22,7 @@ export class TranscoderService {
   constructor(private readonly videoStatus: VideoStatusService) {}
 
   async transCodeAll(inputPath: string, videoId: string) {
-    const outputDir = path.join('outputs', videoId);
+    const outputDir = path.join('/data/output', videoId);
     fs.mkdirSync(outputDir, { recursive: true });
 
     const duration = await validateVideo(inputPath);
@@ -42,6 +42,7 @@ export class TranscoderService {
           '-y',
           '-i',
           inputPath,
+
           '-vf',
           `scale=${res.width}:-2`,
           '-c:v',
@@ -68,6 +69,7 @@ export class TranscoderService {
             99,
           );
 
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
           this.videoStatus.set(videoId, {
             status: 'processing',
             progress,

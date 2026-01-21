@@ -24,8 +24,11 @@ export class TranscodeProcessor extends WorkerHost {
       if (!fs.existsSync(inputPath)) {
         throw new Error('Input file not found');
       }
-      //Setting The State to processing
-      this.videoStatus.set(videoId, { status: 'processing', progress: 0 });
+      // Setting The State to processing
+      await this.videoStatus.set(videoId, {
+        status: 'processing',
+        progress: 0,
+      });
       console.log('Video is processing');
 
       //Transcoding All Videos
@@ -33,7 +36,7 @@ export class TranscodeProcessor extends WorkerHost {
 
       //Setting the state to completed
       console.log('Videos Are transcoded');
-      this.videoStatus.set(videoId, {
+      await this.videoStatus.set(videoId, {
         status: 'completed',
         progress: 100,
         outputs: {
@@ -45,7 +48,7 @@ export class TranscodeProcessor extends WorkerHost {
       });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      this.videoStatus.set(videoId, {
+      await this.videoStatus.set(videoId, {
         status: 'failed',
         error: errorMessage,
       });

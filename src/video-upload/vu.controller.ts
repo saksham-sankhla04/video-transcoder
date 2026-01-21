@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Post,
   UploadedFile,
@@ -21,8 +22,14 @@ export class videoController {
   ) {}
 
   @Get('videos/:id/status')
-  getStatus(@Param('id') id: string) {
-    return this.videoStatus.get(id);
+  async getStatus(@Param('id') id: string) {
+    const status = await this.videoStatus.get(id);
+
+    if (!status) {
+      throw new NotFoundException('Video not found');
+    }
+
+    return status;
   }
 
   @Post()
@@ -30,7 +37,7 @@ export class videoController {
     FileInterceptor('video', {
       storage: diskStorage({
         destination: (req, file, cb) => {
-          const uploadPath = './uploads';
+          const uploadPath = './data/uploads';
           if (!existsSync(uploadPath)) {
             // This creates the folder inside the container
             // which syncs to your host via the -v volume
