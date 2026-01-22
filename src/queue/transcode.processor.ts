@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { TranscoderService } from 'src/transcoder/transcoder.service';
 import { VideoStatusService } from 'src/transcoder/video-status.service';
@@ -55,5 +55,19 @@ export class TranscodeProcessor extends WorkerHost {
 
       throw err;
     }
+  }
+  @OnWorkerEvent('active')
+  onActive(job: Job) {
+    console.log(`🚀 Job ${job.id} started`);
+  }
+
+  @OnWorkerEvent('completed')
+  onCompleted(job: Job) {
+    console.log(`🎉 Job ${job.id} completed`);
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job, err: Error) {
+    console.error(`❌ Job ${job.id} failed`, err.message);
   }
 }
