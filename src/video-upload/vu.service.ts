@@ -17,13 +17,10 @@ export class VideoUploadService {
     //1) Use FFmpeg to convert the file into three different formats
     await this.videoStatus.set(videoId, { status: 'queued' });
 
-    // Normalize path for Docker: data\uploads\file.mp4 -> /data/uploads/file.mp4
-    const normalizedPath = '/' + video.path.replace(/\\/g, '/');
-
     await this.queue.add(
       'transcode',
       {
-        inputPath: normalizedPath,
+        inputPath: video.path.replace(/\\/g, '/'),
         videoId,
       },
       {

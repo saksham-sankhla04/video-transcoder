@@ -4,6 +4,8 @@
 /build
 #uploads and outputs
 /data
+/uploads
+/outputs
 
 # Logs
 logs

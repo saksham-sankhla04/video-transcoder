@@ -37,7 +37,7 @@ export class videoController {
     FileInterceptor('video', {
       storage: diskStorage({
         destination: (req, file, cb) => {
-          const uploadPath = './data/uploads';
+          const uploadPath = './uploads';
           if (!existsSync(uploadPath)) {
             // This creates the folder inside the container
             // which syncs to your host via the -v volume

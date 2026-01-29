@@ -22,7 +22,7 @@ export class TranscoderService {
   constructor(private readonly videoStatus: VideoStatusService) {}
 
   async transCodeAll(inputPath: string, videoId: string) {
-    const outputDir = path.join('/data/output', videoId);
+    const outputDir = path.join('./outputs', videoId);
     fs.mkdirSync(outputDir, { recursive: true });
 
     const duration = await validateVideo(inputPath);
