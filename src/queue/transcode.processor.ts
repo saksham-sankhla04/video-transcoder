@@ -29,13 +29,11 @@ export class TranscodeProcessor extends WorkerHost {
         status: 'processing',
         progress: 0,
       });
-      console.log('Video is processing');
 
       //Transcoding All Videos
       await this.transcoder.transCodeAll(inputPath, videoId);
 
       //Setting the state to completed
-      console.log('Videos Are transcoded');
       await this.videoStatus.set(videoId, {
         status: 'completed',
         progress: 100,

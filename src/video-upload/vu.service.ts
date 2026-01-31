@@ -11,7 +11,6 @@ export class VideoUploadService {
     private readonly videoStatus: VideoStatusService,
   ) {}
   async uploadVideo(video: Express.Multer.File) {
-    console.log(video);
     const videoId = path.parse(video.filename).name;
 
     //1) Use FFmpeg to convert the file into three different formats
