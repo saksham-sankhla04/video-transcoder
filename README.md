@@ -1,107 +1,219 @@
-# Video Transcoder Service 🎥
+# Video Transcoder Service
 
-A backend service built with **NestJS** that accepts video uploads and processes them **asynchronously** to generate multiple resolutions and thumbnails using **FFmpeg** and **BullMQ**.
+A backend service built with **NestJS** that accepts video uploads and transcodes them **asynchronously** into multiple resolutions using **FFmpeg**, **BullMQ**, and **Redis**.
 
-This project is designed to mimic **real-world media processing pipelines** used in production systems.
-
----
-
-## 🚀 Key Features
-
-- Upload videos via REST API
-- Asynchronous video processing using **BullMQ + Redis**
-- Transcoding into:
-  - 1080p
-  - 720p
-  - 480p
-- Automatic thumbnail generation
-- Job status tracking (`queued`, `processing`, `completed`, `failed`)
-- Aspect-ratio–preserving scaling
-- Modular and scalable NestJS architecture
+The API and worker run as separate containers orchestrated with Docker Compose — the API stays responsive while workers handle CPU-intensive transcoding in the background.
 
 ---
 
-## 🧠 Architecture Overview
+## Architecture
 
-Client
-↓
-NestJS API
-↓
-BullMQ Queue
-↓
-Redis
-↓
-Worker (FFmpeg)
+```
+                         ┌──────────────┐
+                         │    Client    │
+                         └──────┬───────┘
+                                │  POST /upload (multipart)
+                                ▼
+                    ┌───────────────────────┐
+                    │   API  (NestJS)       │
+                    │   - Validates file    │
+                    │   - Saves to /uploads │
+                    │   - Queues job        │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │   Redis + BullMQ      │
+                    │   - Job queue         │
+                    │   - Status store      │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │   Worker (FFmpeg)     │
+                    │   - Generates thumb   │
+                    │   - Transcodes 1080p  │
+                    │   - Transcodes 720p   │
+                    │   - Transcodes 480p   │
+                    │   - Updates progress  │
+                    └───────────────────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │   /outputs/{videoId}  │
+                    │   ├── thumbnail.jpg   │
+                    │   ├── 1080p.mp4       │
+                    │   ├── 720p.mp4        │
+                    │   └── 480p.mp4        │
+                    └───────────────────────┘
+```
 
-- API remains responsive
-- CPU-intensive work handled by background workers
-- Designed for horizontal scaling
+- The **API** receives uploads and enqueues transcoding jobs — it never blocks on FFmpeg.
+- The **Worker** picks jobs from the queue and transcodes using FFmpeg with real-time progress tracking.
+- **Redis** serves as both the job queue backend and the status/progress store.
+- Both containers share `uploads/` and `outputs/` via Docker volumes.
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
-- **NestJS**
-- **Node.js**
-- **BullMQ**
-- **Redis**
-- **FFmpeg**
-- **Multer**
-- **pnpm**
+| Component        | Technology             |
+|------------------|------------------------|
+| Framework        | NestJS 11              |
+| Runtime          | Node.js 20             |
+| Job Queue        | BullMQ + Redis 7       |
+| Video Processing | FFmpeg (libx264, AAC)  |
+| File Upload      | Multer                 |
+| Containerization | Docker + Docker Compose|
+| Language         | TypeScript             |
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
-### Upload Video
+### Upload a Video
 
+```
 POST /upload
 Content-Type: multipart/form-data
-Field: video
+Field: video (max 500 MB, video/* MIME types only)
+```
 
 Response:
 
 ```json
 {
-  "videoId": "timer-1767972253901",
-  "status": "queued",
-  "statusUrl": "/videos/timer-1767972253901/status"
+  "videoId": "timer-1769701048169",
+  "status": "processing"
 }
 ```
 
-### Get Processing Status
+### Check Processing Status
 
-GET /videos/:videoId/status
+```
+GET /upload/videos/:videoId/status
+```
 
-Response:
+Response (in progress):
+
+```json
+{
+  "status": "processing",
+  "progress": 42
+}
+```
+
+Response (completed):
 
 ```json
 {
   "status": "completed",
+  "progress": 100,
   "outputs": {
-    "thumbnail": "/outputs/timer-1768237207048/thumbnail.jpg",
-    "480p": "/outputs/timer-1768237207048/480p.mp4",
-    "720p": "/outputs/timer-1768237207048/720p.mp4",
-    "1080p": "/outputs/timer-1768237207048/1080p.mp4"
+    "thumbnail": "/outputs/timer-1769701048169/thumbnail.jpg",
+    "480p": "/outputs/timer-1769701048169/480p.mp4",
+    "720p": "/outputs/timer-1769701048169/720p.mp4",
+    "1080p": "/outputs/timer-1769701048169/1080p.mp4"
   }
 }
 ```
 
-📁 File Storage
+Possible statuses: `queued` → `processing` → `completed` | `failed`
 
-Uploaded videos: /uploads
+---
 
-Transcoded outputs: /outputs/<videoId>/
+## Transcoding Details
 
-These directories are excluded from version control
+| Resolution | Width  | Codec   | Preset | CRF | Audio |
+|------------|--------|---------|--------|-----|-------|
+| 1080p      | 1920px | libx264 | fast   | 23  | AAC   |
+| 720p       | 1280px | libx264 | fast   | 23  | AAC   |
+| 480p       | 854px  | libx264 | fast   | 23  | AAC   |
 
-## 🧪 Local Development
+- Aspect ratio is preserved automatically (`scale=width:-2`)
+- Thumbnail is extracted at the 1-second mark
+- Progress is tracked per-resolution with weighted percentages (thumbnail 5%, 1080p 35%, 720p 30%, 480p 30%)
+- Failed jobs retry up to 3 times with exponential backoff
+
+---
+
+## Running with Docker Compose
 
 ```bash
-pnpm install
-docker run -p 6379:6379 redis
-pnpm run start:dev
-
+docker-compose up --build
 ```
 
-> Note: Status is currently stored in memory for simplicity and can be replaced with Redis or a database in production.
+This starts three services:
+
+| Service  | Description                    | Port |
+|----------|--------------------------------|------|
+| `redis`  | Redis 7 for queue and status   | 6379 |
+| `api`    | NestJS API server              | 3000 |
+| `worker` | FFmpeg transcoding worker      | —    |
+
+Test with curl:
+
+```bash
+# Upload a video
+curl -F "video=@sample.mp4" http://localhost:3000/upload
+
+# Check status (replace with your videoId)
+curl http://localhost:3000/upload/videos/sample-1769701048169/status
+```
+
+---
+
+## Local Development (without Docker)
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start Redis
+docker run -d -p 6379:6379 redis:7
+
+# Run API in watch mode
+pnpm run start:dev
+
+# Run worker in a separate terminal
+pnpm run start:worker
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── main.ts                          # API entry point (port 3000)
+├── worker.ts                        # Worker entry point
+├── app.module.ts                    # Root module (Redis, Bull, routes)
+├── worker.module.ts                 # Worker module
+├── video-upload/
+│   ├── vu.controller.ts             # Upload + status endpoints
+│   ├── vu.service.ts                # Queue job creation
+│   └── vu.module.ts
+├── queue/
+│   ├── queue.module.ts              # Queue registration (API side)
+│   ├── queue-worker.module.ts       # Queue registration (worker side)
+│   └── transcode.processor.ts       # Job processor
+├── transcoder/
+│   ├── transcoder.service.ts        # FFmpeg transcoding logic
+│   ├── video-status.service.ts      # Redis status read/write
+│   └── transcoder.module.ts
+└── utils/
+    └── ffmpeg.util.ts               # FFmpeg spawn + progress parsing
+
+Dockerfile                           # API image
+Dockerfile.worker                    # Worker image (includes FFmpeg)
+docker-compose.yml                   # Full stack orchestration
+```
+
+---
+
+## Environment Variables
+
+| Variable     | Default     | Description          |
+|--------------|-------------|----------------------|
+| `REDIS_HOST` | `127.0.0.1` | Redis server host    |
+| `PORT`       | `3000`      | API server port      |
