@@ -5,9 +5,21 @@ import { videoUploadModule } from './video-upload/vu.module';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10, // Max 10 requests per 60s per IP
+      },
+    ]),
     RedisModule.forRoot({
       type: 'single',
       options: {
@@ -27,6 +39,12 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     QueueModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
