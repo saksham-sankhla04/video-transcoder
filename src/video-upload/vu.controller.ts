@@ -2,9 +2,12 @@ import {
   BadRequestException,
   Controller,
   Get,
+  MessageEvent,
   NotFoundException,
   Param,
   Post,
+  Req,
+  Sse,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -13,6 +16,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { VideoStatusService } from 'src/transcoder/video-status.service';
 import { existsSync, mkdirSync } from 'fs';
+import { Observable } from 'rxjs';
+import type { Request } from 'express';
 
 @Controller('upload')
 export class videoController {
@@ -30,6 +35,61 @@ export class videoController {
     }
 
     return status;
+  }
+
+  @Sse('videos/:id/events')
+  async streamStatus(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<Observable<MessageEvent>> {
+    const status = await this.videoStatus.get(id);
+
+    if (!status) {
+      throw new NotFoundException('Video not found');
+    }
+
+    return new Observable<MessageEvent>((subscriber) => {
+      subscriber.next({ data: status });
+
+      let unsubscribe: (() => Promise<void>) | null = null;
+
+      const teardown = async () => {
+        req.off('close', handleClose);
+
+        if (unsubscribe) {
+          await unsubscribe();
+          unsubscribe = null;
+        }
+      };
+
+      const handleClose = () => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        teardown();
+      };
+
+      req.on('close', handleClose);
+
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      this.videoStatus
+        .subscribe(id, (payload) => {
+          subscriber.next({ data: payload });
+
+          if (payload?.status === 'completed' || payload?.status === 'failed') {
+            subscriber.complete();
+          }
+        })
+        .then((cleanup) => {
+          unsubscribe = cleanup;
+        })
+        .catch((error: unknown) => {
+          subscriber.error(error);
+        });
+
+      return () => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        teardown();
+      };
+    });
   }
 
   @Post()
